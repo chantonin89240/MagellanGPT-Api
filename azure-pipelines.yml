@@ -40,5 +40,5 @@ steps:
 - task: PublishBuildArtifacts@1
   displayName: 'Publish build artifacts'
   inputs:
-    pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    pathtoPublish: '$(Build.SourcesDirectory)'
     artifactName: $(artifactName)
