@@ -37,6 +37,13 @@ steps:
     projects: '**/*.UnitTest.csproj'
     arguments: '--configuration $(buildConfiguration)'
 
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'publish'
+    publishWebProjects: false
+    projects: '**/*.csproj'
+    arguments: '--output $(System.DefaultWorkingDirectory)/publish_output --configuration $(buildConfiguration)'
+
 - task: ArchiveFiles@2
   inputs:
     rootFolderOrFile: '$(Build.SourcesDirectory)'
