@@ -17,11 +17,11 @@ steps:
   inputs:
     version: 8.0.x
 
-- task: DotNetCoreCLI@2
-  displayName: Restore
-  inputs:
-    command: restore
-    projects: '**/*.csproj'
+#- task: DotNetCoreCLI@2
+#  displayName: Restore
+#  inputs:
+#    command: restore
+#    projects: '**/*.csproj'
 
 - task: DotNetCoreCLI@2
   displayName: Build
@@ -42,17 +42,12 @@ steps:
     command: 'publish'
     publishWebProjects: false
     projects: '**/*.csproj'
-    arguments: '--output $(System.DefaultWorkingDirectory) --configuration $(buildConfiguration)'
+    arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory) '
 
-#- task: ArchiveFiles@2
-#  inputs:
-#    rootFolderOrFile: '$(System.DefaultWorkingDirectory)/publish_output'
-#    includeRootFolder: true
-#    archiveType: 'zip'
-#    archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-#    replaceExistingArchive: true
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish build artifacts'
+- task: AzureRmWebAppDeployment@4
   inputs:
-    pathtoPublish: '$(System.DefaultWorkingDirectory)'
-    artifactName: $(artifactName)
+    ConnectionType: 'AzureRM'
+    azureSubscription: 'DI3P3-A1 (2dc6f934-dac5-480d-8f38-76edbb3baa80)'
+    appType: 'webApp'
+    WebAppName: 'apiappmagellangptg3dev'
+    packageForLinux: '$(Build.ArtifactStagingDirectory)/**/*.zip'
