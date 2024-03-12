@@ -1,48 +1,38 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
 trigger:
 - dev
 
+pool:
+  vmImage: 'windows-latest'
+
 variables:
-  solution: '*.sln'
-  buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
 
 steps:
 - task: UseDotNet@2
-  displayName: 'Use .NET Core sdk 8.0.x'
+  displayName: 'Install .NET SDK'
   inputs:
-    version: 8.0.x
-
-#- task: DotNetCoreCLI@2
-#  displayName: Restore
-#  inputs:
-#    command: restore
-#    projects: '**/*.csproj'
+    packageType: 'sdk'
+    version: '8.0.x'
 
 - task: DotNetCoreCLI@2
-  displayName: Build
+  displayName: 'Build'
   inputs:
-    command: build
+    command: 'build'
     projects: '**/*.csproj'
     arguments: '--configuration $(buildConfiguration)'
 
 - task: DotNetCoreCLI@2
-  displayName: Test
-  inputs:
-    command: test
-    projects: '**/*.UnitTest.csproj'
-    arguments: '--configuration $(buildConfiguration)'
-
-- task: DotNetCoreCLI@2
+  displayName: 'Publish'
   inputs:
     command: 'publish'
-    publishWebProjects: false
-    projects: '**/*.csproj'
-    arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory) '
+    arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact'
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'API_$(Build.BuildNumber)'
+  condition: succeededOrFailed()
 
 - task: AzureRmWebAppDeployment@4
   inputs:
