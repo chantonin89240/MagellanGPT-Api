@@ -37,8 +37,15 @@ steps:
     projects: '**/*.UnitTest.csproj'
     arguments: '--configuration $(buildConfiguration)'
 
+- task: ArchiveFiles@2
+  inputs:
+    rootFolderOrFile: '$(Build.SourcesDirectory)'
+    includeRootFolder: true
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+    replaceExistingArchive: true
 - task: PublishBuildArtifacts@1
   displayName: 'Publish build artifacts'
   inputs:
-    pathtoPublish: '$(Build.SourcesDirectory)'
+    pathtoPublish: '$(Build.ArtifactStagingDirectory)'
     artifactName: $(artifactName)
