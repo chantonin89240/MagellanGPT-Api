@@ -39,5 +39,5 @@ steps:
     ConnectionType: 'AzureRM'
     azureSubscription: 'DI3P3-A1 (2dc6f934-dac5-480d-8f38-76edbb3baa80)'
     appType: 'webApp'
-    WebAppName: 'apiappmagellangptg3dev'
+    WebAppName: 'webappmagellangptg3dev2'
     packageForLinux: '$(Build.ArtifactStagingDirectory)/**/*.zip'
