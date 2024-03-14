@@ -1,5 +1,6 @@
 
 using Microsoft.SemanticKernel;
+using Azure.Identity;
 
 namespace API.Web
 {
@@ -8,6 +9,12 @@ namespace API.Web
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            builder.Configuration.AddAzureKeyVault(
+                new Uri($"https://kv-magellan.vault.azure.net/"),
+                new ClientSecretCredential("1e70e2d5-3cab-43fd-805b-4ffde4d58432", "8765f370-18f1-434c-92ad-be4ad238cbf5", "cu~8Q~PROoaSdQRqMGF4xCmp22fChqkUKYkz-cdh")
+            );
+
 
             // Add services to the container.
 

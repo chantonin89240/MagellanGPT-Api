@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using API.Application.Common.Dto;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 
@@ -17,14 +18,15 @@ namespace API.Web.Controllers
             this.kernel = kernel;
         }
 
-        [HttpGet]
-        public async IAsyncEnumerable<string> Chat(string userMessage) 
+        [HttpPost]
+        public async IAsyncEnumerable<string> Chat([FromBody] RequestDto userMessage) 
         {
-            var chat = kernel.Services.GetRequiredKeyedService<IChatCompletionService>("gpt3");
+            var chat = kernel.Services.GetRequiredKeyedService<IChatCompletionService>(userMessage.Model);
+            //var chat = kernel.Services.GetRequiredKeyedService<IChatCompletionService>("gpt3");
 
             var chatHistory = new ChatHistory();
 
-            chatHistory.AddUserMessage(userMessage);
+            chatHistory.AddUserMessage(userMessage.RequestMessage);
 
             await foreach (var item in chat.GetStreamingChatMessageContentsAsync(chatHistory))
             {
