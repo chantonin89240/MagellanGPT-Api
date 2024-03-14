@@ -37,7 +37,7 @@ steps:
 - task: AzureRmWebAppDeployment@4
   inputs:
     ConnectionType: 'AzureRM'
-    azureSubscription: 'DI3P3-A2 (ff1284c6-9f5d-4a8c-a2fd-a3a80008622b)'
+    azureSubscription: 'DI3P3-A1 (2dc6f934-dac5-480d-8f38-76edbb3baa80)'
     appType: 'webApp'
     WebAppName: 'apiappmagellangptg3dev'
     packageForLinux: '$(Build.ArtifactStagingDirectory)/**/*.zip'
