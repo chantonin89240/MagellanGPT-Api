@@ -1,6 +1,6 @@
-
 using Microsoft.SemanticKernel;
 using Azure.Identity;
+using Microsoft.Extensions.Configuration;
 
 namespace API.Web
 {
@@ -10,10 +10,20 @@ namespace API.Web
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // Charge les paramètres à partir du fichier "appsettings.json"
+            builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+
+            var TenantId = builder.Configuration["keyVault:TenantId"];
+            var ClientId = builder.Configuration["keyVault:ClientId"];
+            var ClientSecret = builder.Configuration["keyVault:ClientSecret"];
+
+            // Récupération des secrets du key vault
             builder.Configuration.AddAzureKeyVault(
                 new Uri($"https://kv-magellan.vault.azure.net/"),
-                new ClientSecretCredential("1e70e2d5-3cab-43fd-805b-4ffde4d58432", "8765f370-18f1-434c-92ad-be4ad238cbf5", "cu~8Q~PROoaSdQRqMGF4xCmp22fChqkUKYkz-cdh")
+                new ClientSecretCredential(TenantId, ClientId, ClientSecret)
             );
+
+            
 
             // Add services to the container.
 

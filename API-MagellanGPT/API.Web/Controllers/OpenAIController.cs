@@ -22,9 +22,8 @@ namespace API.Web.Controllers
         public async IAsyncEnumerable<string> Chat([FromBody] RequestDto userMessage) 
         {
             var chat = kernel.Services.GetRequiredKeyedService<IChatCompletionService>(userMessage.Model);
-            //var chat = kernel.Services.GetRequiredKeyedService<IChatCompletionService>("gpt3");
 
-            var chatHistory = new ChatHistory();
+            var chatHistory = new ChatHistory(); // a revoir pour l'historique
 
             chatHistory.AddUserMessage(userMessage.RequestMessage);
 
