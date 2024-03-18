@@ -1,4 +1,6 @@
 ﻿using API.Application.Common.Dto;
+using Azure.Identity;
+using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.SemanticKernel;
@@ -15,10 +17,12 @@ namespace API.Web.Controllers
     public class OpenAIController : ControllerBase
     {
         private Kernel kernel;
+        private IConfiguration configuration;
         
-        public OpenAIController(Kernel kernel)
+        public OpenAIController(Kernel kernel, IConfiguration configuration)
         {
             this.kernel = kernel;
+            this.configuration = configuration;
         }
 
         [HttpPost]
@@ -46,6 +50,12 @@ namespace API.Web.Controllers
                 yield break;
             }
 
+            // Create a BlobServiceClient that will authenticate through Active Directory
+            Uri accountUri = new Uri(configuration["storage:urlBlob"]);
+            BlobServiceClient client = new BlobServiceClient(accountUri, new DefaultAzureCredential());
+
+            BlobContainerClient blobContainer = new BlobContainerClient(configuration["storage:connectionString"], configuration["storage:containerName"]);
+
             // Récupérez les documents pertinents à partir des fichiers envoyés
             var relevantDocuments = new List<object>();
             foreach (var file in userMessage.Files)
@@ -56,21 +66,19 @@ namespace API.Web.Controllers
                     yield break;
                 }
 
-                byte[] blob;
-                using (var memoryStream = new MemoryStream())
-                {
-                    await file.CopyToAsync(memoryStream);
-                    blob = memoryStream.ToArray();
-                }
+                var stream = file.OpenReadStream();
+                var blobClient = blobContainer.GetBlobClient(file.FileName);
+                blobClient.Upload(stream);
+
             }
 
             // Ajoutez les documents récupérés à l'historique de la conversation
             var chatHistory = new ChatHistory();
-            chatHistory.AddUserMessage(userMessage.RequestMessage);
-            foreach (var document in relevantDocuments)
-            {
-                chatHistory.AddSystemMessage(document);
-            }
+            //chatHistory.AddUserMessage(userMessage.RequestMessage);
+            //foreach (var document in relevantDocuments)
+            //{
+            //    chatHistory.AddSystemMessage(document);
+            //}
 
             // Utilisez le modèle de langage pour générer une réponse en fonction des documents récupérés
             var chat = kernel.Services.GetRequiredKeyedService<IChatCompletionService>(userMessage.Model);
