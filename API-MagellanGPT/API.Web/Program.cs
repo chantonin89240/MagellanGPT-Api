@@ -1,6 +1,7 @@
 using Microsoft.SemanticKernel;
 using Azure.Identity;
 using Microsoft.Extensions.Configuration;
+using Microsoft.KernelMemory;
 
 namespace API.Web
 {
@@ -22,27 +23,44 @@ namespace API.Web
                 new Uri($"https://kv-magellan.vault.azure.net/"),
                 new ClientSecretCredential(TenantId, ClientId, ClientSecret)
             );
-
             
-
             // Add services to the container.
-
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-
-            
-
+            // récupération des variables d'environnements
             var gpt3Name = builder.Configuration["GPTVersion35"];
             var gpt4Name = builder.Configuration["GPTVersion4"];
+            var gptTextEmbeddingName = builder.Configuration["GPTTextEmbedding"];
             var endpoint = builder.Configuration["endpointOpenIA"];
             var keyDeployment = builder.Configuration["DeploymentKeyOpenIA"];
 
+            // connexion au différent model
             builder.Services.AddKernel()
                 .AddAzureOpenAIChatCompletion(gpt3Name, endpoint, keyDeployment, serviceId: "gpt3")
-                .AddAzureOpenAIChatCompletion(gpt4Name, endpoint, keyDeployment, serviceId: "gpt4");
+                .AddAzureOpenAIChatCompletion(gpt4Name, endpoint, keyDeployment, serviceId: "gpt4")
+                .AddAzureOpenAIChatCompletion(gptTextEmbeddingName, endpoint, keyDeployment, serviceId: "text-embedding");
+
+            builder.Services.AddScoped<MemoryServerless>(_ => new KernelMemoryBuilder()
+                .WithAzureOpenAITextGeneration(
+                    new AzureOpenAIConfig
+                    {
+                        APIKey = builder.Configuration["OpenAI:ApiKey"]!,
+                        Endpoint = builder.Configuration["OpenAI:EndPoint"]!,
+                        Deployment = builder.Configuration["OpenAI:Deployment"]!,
+                        Auth = AzureOpenAIConfig.AuthTypes.APIKey
+                    }
+                ).WithAzureOpenAITextEmbeddingGeneration(
+                    new AzureOpenAIConfig
+                    {
+                        APIKey = builder.Configuration["OpenAI:ApiKey"]!,
+                        Endpoint = builder.Configuration["OpenAI:EndPoint"]!,
+                        Deployment = "text-embedding",
+                        Auth = AzureOpenAIConfig.AuthTypes.APIKey
+                    }
+                ).Build<MemoryServerless>());
 
             var app = builder.Build();
 

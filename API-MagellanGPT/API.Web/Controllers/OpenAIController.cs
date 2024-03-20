@@ -5,11 +5,16 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
+using Microsoft.KernelMemory;
 using System.IO;
 using System.Reflection.Metadata;
+using Azure.Search.Documents;
+using Azure;
+using Microsoft.KernelMemory.Models;
 
 namespace API.Web.Controllers
 {
+
     
 
     [Route("api/[controller]")]
@@ -18,11 +23,13 @@ namespace API.Web.Controllers
     {
         private Kernel kernel;
         private IConfiguration configuration;
-        
-        public OpenAIController(Kernel kernel, IConfiguration configuration)
+        private MemoryServerless memoryServerless;
+
+        public OpenAIController(Kernel kernel, IConfiguration configuration, MemoryServerless serverless)
         {
             this.kernel = kernel;
             this.configuration = configuration;
+            this.memoryServerless = serverless;
         }
 
         [HttpPost]
@@ -43,49 +50,42 @@ namespace API.Web.Controllers
         [HttpPost("RAG")]
         public async IAsyncEnumerable<string> Rag([FromForm] RagDto userMessage)
         {
-            // Vérifiez si des fichiers ont été envoyés
             if (userMessage.Files == null || !userMessage.Files.Any())
             {
                 yield return "No files were provided.";
                 yield break;
             }
-
-            // Create a BlobServiceClient that will authenticate through Active Directory
-            Uri accountUri = new Uri(configuration["storage:urlBlob"]);
-            BlobServiceClient client = new BlobServiceClient(accountUri, new DefaultAzureCredential());
-
-            BlobContainerClient blobContainer = new BlobContainerClient(configuration["storage:connectionString"], configuration["storage:containerName"]);
-
-            // Récupérez les documents pertinents à partir des fichiers envoyés
-            var relevantDocuments = new List<object>();
             foreach (var file in userMessage.Files)
             {
-                if (file.Length > int.MaxValue)
-                {
-                    yield return "File is too large.";
-                    yield break;
-                }
+                var toto = new Microsoft.KernelMemory.Document();
 
-                var stream = file.OpenReadStream();
-                var blobClient = blobContainer.GetBlobClient(file.FileName);
-                blobClient.Upload(stream);
-
+                toto.AddStream(file.FileName, file.OpenReadStream());
+                //toto.AddFile(file.FileName);
+                var id = await memoryServerless.ImportDocumentAsync(toto);
             }
 
-            // Ajoutez les documents récupérés à l'historique de la conversation
-            var chatHistory = new ChatHistory();
-            //chatHistory.AddUserMessage(userMessage.RequestMessage);
-            //foreach (var document in relevantDocuments)
-            //{
-            //    chatHistory.AddSystemMessage(document);
-            //}
+            var answer = await memoryServerless.AskAsync(userMessage.RequestMessage);
 
-            // Utilisez le modèle de langage pour générer une réponse en fonction des documents récupérés
-            var chat = kernel.Services.GetRequiredKeyedService<IChatCompletionService>(userMessage.Model);
-            await foreach (var item in chat.GetStreamingChatMessageContentsAsync(chatHistory))
+            yield return answer.Result;
+        }
+
+        private async Task<string> UploadFileToBlobAsync(IFormFile file)
+        {
+            var connectionString = configuration["storage:connectionString"];
+            var containerName = configuration["storage:containerName"];
+            var blobServiceClient = new BlobServiceClient(connectionString);
+            var blobContainerClient = blobServiceClient.GetBlobContainerClient(containerName);
+
+            await blobContainerClient.CreateIfNotExistsAsync();
+
+            var blobClient = blobContainerClient.GetBlobClient(file.FileName);
+
+            using (var stream = file.OpenReadStream())
             {
-                yield return item.Content;
+                await blobClient.UploadAsync(stream, overwrite: true);
             }
+
+            return blobClient.Uri.ToString();
         }
     }
 }
