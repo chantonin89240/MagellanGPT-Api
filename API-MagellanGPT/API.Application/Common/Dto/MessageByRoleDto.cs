@@ -1,8 +1,8 @@
 ﻿namespace API.Application.Common.Dto
 {
-    public class RequestDto
+    public class MessageByRoleDto
     {
         public string? Model { get; set; }
-        public string? RequestMessage { get; set; }
+        public List<MessageDto>? Messages { get; set; }
     }
 }
