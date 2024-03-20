@@ -14,9 +14,6 @@ using Microsoft.KernelMemory.Models;
 
 namespace API.Web.Controllers
 {
-
-    
-
     [Route("api/[controller]")]
     [ApiController]
     public class OpenAIController : ControllerBase
