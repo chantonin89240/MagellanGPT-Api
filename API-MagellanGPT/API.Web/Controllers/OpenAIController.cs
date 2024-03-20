@@ -44,11 +44,11 @@ namespace API.Web.Controllers
             {
                 foreach (var message in userMessage.Messages)
                 {
-                    if (message.Role == "System")
+                    if (message.Role == "System" || message.Role == "system")
                     {
                         chatHistory.AddSystemMessage(message.Content);
                     }
-                    else if (message.Role == "User")
+                    else if (message.Role == "User" || message.Role == "user")
                     {
                         chatHistory.AddUserMessage(message.Content);
                     }
