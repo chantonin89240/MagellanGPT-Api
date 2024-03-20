@@ -37,10 +37,29 @@ namespace API.Web
             var endpoint = builder.Configuration["endpointOpenIA"];
             var keyDeployment = builder.Configuration["DeploymentKeyOpenIA"];
 
-            // connexion au différent model
             builder.Services.AddKernel()
                 .AddAzureOpenAIChatCompletion(gpt3Name, endpoint, keyDeployment, serviceId: "gpt3")
-                .AddAzureOpenAIChatCompletion(gpt4Name, endpoint, keyDeployment, serviceId: "gpt4");
+                .AddAzureOpenAIChatCompletion(gpt4Name, endpoint, keyDeployment, serviceId: "gpt4")
+                .AddAzureOpenAIChatCompletion(gptTextEmbeddingName, endpoint, keyDeployment, serviceId: "text-embedding");
+
+            builder.Services.AddScoped<MemoryServerless>(_ => new KernelMemoryBuilder()
+                .WithAzureOpenAITextGeneration(
+                    new AzureOpenAIConfig
+                    {
+                        APIKey = builder.Configuration["ApiKeyOpenIA"]!,
+                        Endpoint = builder.Configuration["EndpointOpenIA"]!,
+                        Deployment = builder.Configuration["GPTVersion35"]!,
+                        Auth = AzureOpenAIConfig.AuthTypes.APIKey
+                    }
+                ).WithAzureOpenAITextEmbeddingGeneration(
+                    new AzureOpenAIConfig
+                    {
+                        APIKey = builder.Configuration["ApiKeyOpenIA"]!,
+                        Endpoint = builder.Configuration["EndpointOpenIA"]!,
+                        Deployment = builder.Configuration["GPTTextEmbedding"]!,
+                        Auth = AzureOpenAIConfig.AuthTypes.APIKey
+                    }
+                ).Build<MemoryServerless>());
 
             var app = builder.Build();
 
