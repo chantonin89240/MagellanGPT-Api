@@ -2,6 +2,7 @@ using Microsoft.SemanticKernel;
 using Azure.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.KernelMemory;
+using API.Application;
 
 namespace API.Web
 {
@@ -29,6 +30,7 @@ namespace API.Web
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            builder.Services.ConfigureServices();
 
             // récupération des variables d'environnements
             var gpt3Name = builder.Configuration["GPTVersion35"];
