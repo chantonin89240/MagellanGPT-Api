@@ -42,7 +42,7 @@ namespace API.Web
                 .AddAzureOpenAIChatCompletion(gpt4Name, endpoint, keyDeployment, serviceId: "gpt4")
                 .AddAzureOpenAIChatCompletion(gptTextEmbeddingName, endpoint, keyDeployment, serviceId: "text-embedding");
 
-            builder.Services.AddScoped<MemoryServerless>(_ => new KernelMemoryBuilder()
+            builder.Services.AddTransient<MemoryServerless>(_ => new KernelMemoryBuilder()
                 .WithAzureOpenAITextGeneration(
                     new AzureOpenAIConfig
                     {

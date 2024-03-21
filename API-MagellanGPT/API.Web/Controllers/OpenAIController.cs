@@ -72,28 +72,57 @@ namespace API.Web.Controllers
             }
         }
 
+        /// <summary>
+        /// fonctionnalité de RAG pour questionner l'AI sur des documents PDF
+        /// </summary>
+        /// <param name="userMessage"></param>
+        /// <returns></returns>
         [HttpPost("RAG")]
         public async IAsyncEnumerable<string> Rag([FromForm] RagDto userMessage)
         {
+            // vérification que la liste contient des document 
             if (userMessage.Files == null || !userMessage.Files.Any())
             {
                 yield return "No files were provided.";
                 yield break;
             }
+
+            List<string> idDoc = new List<string>();
+            // lecture des documents avec un stream et ajout dans le serverless 
             foreach (var file in userMessage.Files)
             {
-                var toto = new Microsoft.KernelMemory.Document();
+                // vérification que tout les documents soit des PDF
+                if (file.ContentType != "application/pdf")
+                {
+                    yield return "One document is not a PDF.";
+                    yield break;
+                }
 
-                toto.AddStream(file.FileName, file.OpenReadStream());
-                //toto.AddFile(file.FileName);
-                var id = await memoryServerless.ImportDocumentAsync(toto);
+                var myDoc = new Microsoft.KernelMemory.Document();
+
+                myDoc.AddStream(file.FileName, file.OpenReadStream());
+                var id = await memoryServerless.ImportDocumentAsync(myDoc);
+                idDoc.Add(id);
             }
 
+            // ajout de la question utilisateur
             var answer = await memoryServerless.AskAsync(userMessage.RequestMessage);
 
+            // return de la réponse de l'AI
             yield return answer.Result;
+
+            // on vide les documents pour éviter les erreurs de cache
+            idDoc.ForEach(id =>
+            {
+                memoryServerless.DeleteDocumentAsync(id);
+            });
         }
 
+        /// <summary>
+        /// fonctionnalité d'upload des documents dans azure storage avec un Blob
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
         private async Task<string> UploadFileToBlobAsync(IFormFile file)
         {
             var connectionString = configuration["storage:connectionString"];
