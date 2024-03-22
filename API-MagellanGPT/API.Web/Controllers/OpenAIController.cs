@@ -1,16 +1,10 @@
 ﻿using API.Application.Common.Dto;
-using Azure.Identity;
+using API.Application.Common.Interfaces;
 using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.KernelMemory;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.KernelMemory;
-using System.IO;
-using System.Reflection.Metadata;
-using Azure.Search.Documents;
-using Azure;
-using Microsoft.KernelMemory.Models;
 
 namespace API.Web.Controllers
 {
@@ -19,56 +13,45 @@ namespace API.Web.Controllers
     public class OpenAIController : ControllerBase
     {
         private Kernel kernel;
+        private IOpenAIService OpenAIService;
         private IConfiguration configuration;
         private MemoryServerless memoryServerless;
 
-        public OpenAIController(Kernel kernel, IConfiguration configuration, MemoryServerless serverless)
+        public OpenAIController(Kernel kernel, IOpenAIService openAIService, IConfiguration configuration, MemoryServerless serverless)
         {
             this.kernel = kernel;
+            this.OpenAIService = openAIService;
             this.configuration = configuration;
             this.memoryServerless = serverless;
         }
 
+        /// <summary>
+        /// fonctionnalité de chat avec azure open AI
+        /// </summary>
+        /// <param name="userMessage"></param>
+        /// <returns></returns>
         [HttpPost("Chat")]
         public async IAsyncEnumerable<string> Chat([FromBody] RequestDto userMessage) 
         {
-            var chat = kernel.Services.GetRequiredKeyedService<IChatCompletionService>(userMessage.Model);
-
-            var chatHistory = new ChatHistory(); // a revoir pour l'historique
-
-            chatHistory.AddUserMessage(userMessage.RequestMessage);
-
-            await foreach (var item in chat.GetStreamingChatMessageContentsAsync(chatHistory))
+            // appel du service
+            await foreach (var message in OpenAIService.Chat(userMessage))
             {
-                yield return item.Content;
+                yield return message;
             }
         }
 
+        /// <summary>
+        /// fonctionnalité de chat avec les paramètres de prompt system
+        /// </summary>
+        /// <param name="userMessage"></param>
+        /// <returns></returns>
         [HttpPost("ChatWithPromptSystem")]
         public async IAsyncEnumerable<string> ChatWithPromptSystem([FromBody] MessageByRoleDto userMessage)
         {
-            var chat = kernel.Services.GetRequiredKeyedService<IChatCompletionService>(userMessage.Model);
-
-            var chatHistory = new ChatHistory();
-
-            if (userMessage.Messages != null && userMessage.Messages.Any())
+            // appel du service
+            await foreach (var message in OpenAIService.ChatWithPromptSystem(userMessage))
             {
-                foreach (var message in userMessage.Messages)
-                {
-                    if (message.Role == "System" || message.Role == "system")
-                    {
-                        chatHistory.AddSystemMessage(message.Content);
-                    }
-                    else if (message.Role == "User" || message.Role == "user")
-                    {
-                        chatHistory.AddUserMessage(message.Content);
-                    }
-                }
-            }
-
-            await foreach (var item in chat.GetStreamingChatMessageContentsAsync(chatHistory))
-            {
-                yield return item.Content;
+                yield return message;
             }
         }
 
@@ -80,42 +63,11 @@ namespace API.Web.Controllers
         [HttpPost("RAG")]
         public async IAsyncEnumerable<string> Rag([FromForm] RagDto userMessage)
         {
-            // vérification que la liste contient des document 
-            if (userMessage.Files == null || !userMessage.Files.Any())
+            // appel du service 
+            await foreach (var message in OpenAIService.Rag(userMessage))
             {
-                yield return "No files were provided.";
-                yield break;
+                yield return message;
             }
-
-            List<string> idDoc = new List<string>();
-            // lecture des documents avec un stream et ajout dans le serverless 
-            foreach (var file in userMessage.Files)
-            {
-                // vérification que tout les documents soit des PDF
-                if (file.ContentType != "application/pdf")
-                {
-                    yield return "One document is not a PDF.";
-                    yield break;
-                }
-
-                var myDoc = new Microsoft.KernelMemory.Document();
-
-                myDoc.AddStream(file.FileName, file.OpenReadStream());
-                var id = await memoryServerless.ImportDocumentAsync(myDoc);
-                idDoc.Add(id);
-            }
-
-            // ajout de la question utilisateur
-            var answer = await memoryServerless.AskAsync(userMessage.RequestMessage);
-
-            // return de la réponse de l'AI
-            yield return answer.Result;
-
-            // on vide les documents pour éviter les erreurs de cache
-            idDoc.ForEach(id =>
-            {
-                memoryServerless.DeleteDocumentAsync(id);
-            });
         }
 
         /// <summary>
