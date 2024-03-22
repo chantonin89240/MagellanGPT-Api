@@ -87,6 +87,13 @@ public class OpenAIService : IOpenAIService
                 yield break;
             }
 
+            // vérification du poid du fichier PDF
+            if (file.Length > int.MaxValue)
+            {
+                yield return "File is too large.";
+                yield break;
+            }
+
             var myDoc = new Document();
 
             myDoc.AddStream(file.FileName, file.OpenReadStream());
