@@ -3,6 +3,7 @@ using Azure.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.KernelMemory;
 using API.Application;
+using Microsoft.KernelMemory.Configuration;
 
 namespace API.Web
 {
@@ -60,6 +61,13 @@ namespace API.Web
                         Endpoint = builder.Configuration["EndpointOpenIA"]!,
                         Deployment = builder.Configuration["GPTTextEmbedding"]!,
                         Auth = AzureOpenAIConfig.AuthTypes.APIKey
+                    }
+                ).WithCustomTextPartitioningOptions(
+                    new TextPartitioningOptions
+                    {
+                        MaxTokensPerParagraph = 256,
+                        MaxTokensPerLine = 256,
+                        OverlappingTokens = 50
                     }
                 ).Build<MemoryServerless>());
 

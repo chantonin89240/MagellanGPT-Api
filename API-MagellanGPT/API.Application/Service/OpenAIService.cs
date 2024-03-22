@@ -1,10 +1,14 @@
 ﻿using API.Application.Common.Dto;
 using API.Application.Common.Interfaces;
+using DocumentFormat.OpenXml.Wordprocessing;
+using iText.IO.Source;
+using iText.Kernel.Pdf;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.KernelMemory;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
+using Document = Microsoft.KernelMemory.Document;
 
 namespace API.Application.Service;
 
@@ -103,6 +107,12 @@ public class OpenAIService : IOpenAIService
 
         // ajout de la question utilisateur
         var answer = await memoryServerless.AskAsync(userMessage.RequestMessage);
+
+        // pour retourner les sources et citations
+        foreach (var x in answer.RelevantSources)
+        {
+            Console.WriteLine($"  * {x.SourceName} -- {x.Partitions.First().LastUpdate:D}");
+        }
 
         // return de la réponse de l'AI
         yield return answer.Result;
