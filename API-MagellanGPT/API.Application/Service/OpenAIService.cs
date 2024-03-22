@@ -111,7 +111,7 @@ public class OpenAIService : IOpenAIService
         // pour retourner les sources et citations
         foreach (var x in answer.RelevantSources)
         {
-            Console.WriteLine($"  * {x.SourceName} -- {x.Partitions.First().LastUpdate:D}");
+            var text = $"  * {x.SourceName} -- {x.Partitions.First().LastUpdate:D}";
         }
 
         // return de la réponse de l'AI
