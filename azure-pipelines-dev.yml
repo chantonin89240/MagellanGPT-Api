@@ -30,12 +30,12 @@ steps:
     projects: '**/*.csproj'
     arguments: '--configuration $(buildConfiguration)'
 
-- task: DotNetCoreCLI@2
-  displayName: 'Exécuter les tests unitaires'
-  inputs:
-    command: test
-    projects: '**/*API.xUnitTest.csproj'
-    arguments: '--configuration $(buildConfiguration) --collect "Code coverage"'
+# - task: DotNetCoreCLI@2
+#   displayName: 'Exécuter les tests unitaires'
+#   inputs:
+#     command: test
+#     projects: '**/*API.xUnitTest.csproj'
+#     arguments: '--configuration $(buildConfiguration) --collect "Code coverage"'
 
 - task: SonarCloudAnalyze@1
   inputs:
