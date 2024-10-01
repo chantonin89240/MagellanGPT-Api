@@ -25,6 +25,11 @@ public class OpenAIService : IOpenAIService
         this.memoryServerless = serverless;
     }
 
+    /// <summary>
+    /// fonction de chat avec l'AI générative
+    /// </summary>
+    /// <param name="userMessage"></param>
+    /// <returns></returns>
     public async IAsyncEnumerable<string> Chat(RequestDto userMessage)
     {
         var chat = kernel.Services.GetRequiredKeyedService<IChatCompletionService>(userMessage.Model);
@@ -39,6 +44,11 @@ public class OpenAIService : IOpenAIService
         }
     }
 
+    /// <summary>
+    /// Fonction de chat avec le prompt system
+    /// </summary>
+    /// <param name="userMessage"></param>
+    /// <returns></returns>
     public async IAsyncEnumerable<string> ChatWithPromptSystem(MessageByRoleDto userMessage)
     {
         var chat = kernel.Services.GetRequiredKeyedService<IChatCompletionService>(userMessage.Model);
